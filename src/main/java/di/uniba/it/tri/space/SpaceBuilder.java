@@ -35,10 +35,12 @@
 package di.uniba.it.tri.space;
 
 import di.uniba.it.tri.data.DictionaryEntry;
+import di.uniba.it.tri.vectors.MemorySparseVectorReader;
 import di.uniba.it.tri.vectors.Vector;
 import di.uniba.it.tri.vectors.VectorFactory;
 import di.uniba.it.tri.vectors.VectorStoreUtils;
 import di.uniba.it.tri.vectors.VectorType;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -86,6 +88,8 @@ public class SpaceBuilder {
     private Map<String, Double> idfMap;
 
     private double t = 0.001;
+
+    private File randomVectorFile = null;
 
     /**
      *
@@ -205,6 +209,14 @@ public class SpaceBuilder {
         this.t = t;
     }
 
+    public File getRandomVectorFile() {
+        return randomVectorFile;
+    }
+
+    public void setRandomVectorFile(File randomVectorFile) {
+        this.randomVectorFile = randomVectorFile;
+    }
+
     private double idf(String word, double wordOcc) {
         Double idf = idfMap.get(word);
         if (idf == null) {
@@ -223,19 +235,37 @@ public class SpaceBuilder {
         if (!outputDir.exists()) {
             outputDir.mkdir();
         }
-        Map<String, Integer> dict = buildDictionary(startingDir, size);
+        MemorySparseVectorReader sElem = null;
+        if (randomVectorFile != null) {
+            LOG.log(Level.INFO, "Load random vectors from file {0}", randomVectorFile.getAbsolutePath());
+            sElem = new MemorySparseVectorReader(randomVectorFile);
+            sElem.init();
+            LOG.log(Level.INFO, "Random vectors dimension {0}", sElem.getDimension());
+            LOG.log(Level.INFO, "Random vectors dict size {0}", sElem.getMemorySize());
+        }
+        Map<String, Integer> dict = buildDictionary(startingDir, size, sElem);
         LOG.log(Level.INFO, "Dictionary size {0}", dict.size());
         LOG.log(Level.INFO, "Use self random vector: {0}", self);
         LOG.log(Level.INFO, "IDF score: {0}", idf);
-        Map<String, Vector> elementalSpace = new HashMap<>();
-        //create random vectors space
-        LOG.info("Building elemental vectors...");
-        totalOcc = 0;
-        Random random = new Random();
-        for (String word : dict.keySet()) {
-            elementalSpace.put(word, VectorFactory.generateRandomVector(VectorType.REAL, dimension, seed, random));
-            //compute total occurrences taking into account the dictionary
-            totalOcc += dict.get(word);
+        Map<String, Vector> elementalSpace = null;
+        if (randomVectorFile == null) {
+            elementalSpace = new HashMap<>();
+            //create random vectors space
+            LOG.info("Building elemental vectors...");
+            totalOcc = 0;
+            Random random = new Random();
+            for (String word : dict.keySet()) {
+                elementalSpace.put(word, VectorFactory.generateRandomVector(VectorType.REAL, dimension, seed, random));
+                //compute total occurrences taking into account the dictionary
+                totalOcc += dict.get(word);
+            }
+        } else {
+            LOG.info("Counting total occurrences...");
+            totalOcc = 0;
+            for (String word : dict.keySet()) {
+                //compute total occurrences taking into account the dictionary
+                totalOcc += dict.get(word);
+            }
         }
         LOG.log(Level.INFO, "Total occurrences {0}", totalOcc);
         LOG.log(Level.INFO, "Building spaces: {0}", startingDir.getAbsolutePath());
@@ -249,51 +279,94 @@ public class SpaceBuilder {
             String header = VectorStoreUtils.createHeader(VectorType.REAL, dimension, seed);
             outputStream.writeUTF(header);
             String[] split;
-            while (reader.ready()) {
-                split = reader.readLine().split("\t");
-                String token = split[0];
-                if (elementalSpace.containsKey(token)) {
-                    Vector v;
-                    if (self) {
-                        v = elementalSpace.get(token).copy();
-                    } else {
-                        v = VectorFactory.createZeroVector(VectorType.REAL, dimension);
-                    }
-                    int i = 1;
-                    while (i < split.length) {
-                        String word = split[i];
-                        Vector ev = elementalSpace.get(word);
-                        if (ev != null) {
-                            double f = dict.get(word).doubleValue() / (double) totalOcc; //downsampling
-                            double p = 1;
-                            if (f > t) { //if word frequency is greater than the threshold, compute the probability of consider the word 
-                                p = Math.sqrt(t / f);
-                            }
-                            double w = Double.parseDouble(split[i + 1]) * p;
-                            if (idf) {
-                                w = w * idf(word, dict.get(word).doubleValue());
-                            }
-                            v.superpose(ev, w, null);
+            if (elementalSpace != null) {
+                while (reader.ready()) {
+                    split = reader.readLine().split("\t");
+                    String token = split[0];
+                    if (elementalSpace.containsKey(token)) {
+                        Vector v;
+                        if (self) {
+                            v = elementalSpace.get(token).copy();
+                        } else {
+                            v = VectorFactory.createZeroVector(VectorType.REAL, dimension);
                         }
-                        i = i + 2;
-                    }
-                    if (!v.isZeroVector()) {
-                        v.normalize();
-                        outputStream.writeUTF(token);
-                        v.writeToStream(outputStream);
+                        int i = 1;
+                        while (i < split.length) {
+                            String word = split[i];
+                            Vector ev = elementalSpace.get(word);
+                            if (ev != null) {
+                                double f = dict.get(word).doubleValue() / (double) totalOcc; //downsampling
+                                double p = 1;
+                                if (f > t) { //if word frequency is greater than the threshold, compute the probability of consider the word 
+                                    p = Math.sqrt(t / f);
+                                }
+                                double w = Double.parseDouble(split[i + 1]) * p;
+                                if (idf) {
+                                    w = w * idf(word, dict.get(word).doubleValue());
+                                }
+                                v.superpose(ev, w, null);
+                            }
+                            i = i + 2;
+                        }
+                        if (!v.isZeroVector()) {
+                            v.normalize();
+                            outputStream.writeUTF(token);
+                            v.writeToStream(outputStream);
+                        }
                     }
                 }
+                reader.close();
+                outputStream.close();
             }
-            reader.close();
-            outputStream.close();
+            if (sElem != null) {
+                while (reader.ready()) {
+                    split = reader.readLine().split("\t");
+                    String token = split[0];
+                    if (sElem.containsKey(token)) {
+                        Vector v;
+                        if (self) {
+                            v = sElem.getVector(token).copy();
+                        } else {
+                            v = VectorFactory.createZeroVector(VectorType.REAL, dimension);
+                        }
+                        int i = 1;
+                        while (i < split.length) {
+                            String word = split[i];
+                            Vector ev = sElem.getVector(word);
+                            if (ev != null) {
+                                double f = dict.get(word).doubleValue() / (double) totalOcc; //downsampling
+                                double p = 1;
+                                if (f > t) { //if word frequency is greater than the threshold, compute the probability of consider the word 
+                                    p = Math.sqrt(t / f);
+                                }
+                                double w = Double.parseDouble(split[i + 1]) * p;
+                                if (idf) {
+                                    w = w * idf(word, dict.get(word).doubleValue());
+                                }
+                                v.superpose(ev, w, null);
+                            }
+                            i = i + 2;
+                        }
+                        if (!v.isZeroVector()) {
+                            v.normalize();
+                            outputStream.writeUTF(token);
+                            v.writeToStream(outputStream);
+                        }
+                    }
+                }
+                reader.close();
+                outputStream.close();
+            }
         }
-        LOG.log(Level.INFO, "Save elemental vectors in dir: {0}", outputDir.getAbsolutePath());
-        VectorStoreUtils.saveSpace(new File(outputDir.getAbsolutePath() + "/vectors.elemental"), elementalSpace, VectorType.REAL, dimension, seed);
+        if (elementalSpace != null) {
+            LOG.log(Level.INFO, "Save elemental vectors in dir: {0}", outputDir.getAbsolutePath());
+            VectorStoreUtils.saveSpace(new File(outputDir.getAbsolutePath() + "/vectors.elemental"), elementalSpace, VectorType.REAL, dimension, seed);
+        }
     }
 
-    private Map<String, Integer> buildDictionary(File startingDir, int maxSize) throws IOException {
+    private Map<String, Integer> buildDictionary(File startingDir, int maxSize, MemorySparseVectorReader sElem) throws IOException {
         LOG.log(Level.INFO, "Building dictionary: {0}", startingDir.getAbsolutePath());
-        Map<String, Integer> cmap = new HashMap<>();
+        Map<String, Integer> cmap = new Object2IntOpenHashMap();
         File[] listFiles = startingDir.listFiles();
         for (File file : listFiles) {
             LOG.log(Level.INFO, "Working on file: {0}", file.getName());
@@ -301,15 +374,17 @@ public class SpaceBuilder {
             while (reader.ready()) {
                 String[] split = reader.readLine().split("\t");
                 String token = split[0];
-                int count = 0;
-                for (int i = 2; i < split.length; i = i + 2) {
-                    count += Integer.parseInt(split[i]);
-                }
-                Integer c = cmap.get(token);
-                if (c == null) {
-                    cmap.put(token, count);
-                } else {
-                    cmap.put(token, c + count);
+                if (sElem == null || sElem.containsKey(token)) {
+                    int count = 0;
+                    for (int i = 2; i < split.length; i = i + 2) {
+                        count += Integer.parseInt(split[i]);
+                    }
+                    Integer c = cmap.get(token);
+                    if (c == null) {
+                        cmap.put(token, count);
+                    } else {
+                        cmap.put(token, c + count);
+                    }
                 }
             }
             reader.close();
@@ -347,7 +422,8 @@ public class SpaceBuilder {
                 .addOption("v", true, "The dictionary size (optional, default 100000)")
                 .addOption("idf", true, "Enable IDF (optinal, defaults false)")
                 .addOption("self", true, "Inizialize using random vector (optinal, default false)")
-                .addOption("t", true, "Threshold for downsampling frequent words (optinal, default 0.001)");
+                .addOption("t", true, "Threshold for downsampling frequent words (optinal, default 0.001)")
+                .addOption("e", true, "Load random vectors");
     }
 
     /**
@@ -367,6 +443,9 @@ public class SpaceBuilder {
                     builder.setIdf(Boolean.parseBoolean(cmd.getOptionValue("idf", "false")));
                     builder.setSelf(Boolean.parseBoolean(cmd.getOptionValue("self", "false")));
                     builder.setT(Double.parseDouble(cmd.getOptionValue("t", "0.001")));
+                    if (cmd.hasOption("e")) {
+                        builder.setRandomVectorFile(new File(cmd.getOptionValue("e")));
+                    }
                     builder.build(new File(cmd.getOptionValue("o")));
                 } catch (IOException | NumberFormatException ex) {
                     LOG.log(Level.SEVERE, null, ex);
@@ -376,7 +455,7 @@ public class SpaceBuilder {
                 helpFormatter.printHelp("Build WordSpace using Temporal Random Indexing", options, true);
             }
         } catch (ParseException ex) {
-            Logger.getLogger(SpaceBuilder.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.log(Level.SEVERE, null, ex);
         }
     }
 }
