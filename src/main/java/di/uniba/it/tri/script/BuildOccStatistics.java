@@ -34,7 +34,6 @@
  */
 package di.uniba.it.tri.script;
 
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -123,27 +122,29 @@ public class BuildOccStatistics {
                 int k = 0;
                 long[] totalCount = new long[files.length];
                 for (File file : files) {
-                    System.out.println("Reading " + file);
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))));
-                    String[] split;
-                    while (reader.ready()) {
-                        split = reader.readLine().split("\\s+");
-                        if (validSet == null || validSet.contains(split[0])) {
-                            int c = 0;
-                            for (int i = 2; i < split.length; i = i + 2) {
-                                c += Integer.parseInt(split[i]);
+                    if (!file.isDirectory()) {
+                        System.out.println("Reading " + file);
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))));
+                        String[] split;
+                        while (reader.ready()) {
+                            split = reader.readLine().split("\\s+");
+                            if (validSet == null || validSet.contains(split[0])) {
+                                int c = 0;
+                                for (int i = 2; i < split.length; i = i + 2) {
+                                    c += Integer.parseInt(split[i]);
+                                }
+                                int[] vc = cmap.get(split[0]);
+                                if (vc == null) {
+                                    vc = new int[files.length];
+                                    cmap.put(split[0], vc);
+                                }
+                                vc[k] = c;
+                                totalCount[k] += c;
                             }
-                            int[] vc = cmap.get(split[0]);
-                            if (vc == null) {
-                                vc = new int[files.length];
-                                cmap.put(split[0], vc);
-                            }
-                            vc[k] = c;
-                            totalCount[k] += c;
                         }
+                        reader.close();
+                        k++;
                     }
-                    reader.close();
-                    k++;
                 }
                 BufferedWriter writer = new BufferedWriter(new FileWriter(cmd.getOptionValue("o")));
                 String[] headers = new String[files.length + 2];
