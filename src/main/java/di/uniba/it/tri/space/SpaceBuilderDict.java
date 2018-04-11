@@ -39,6 +39,7 @@ import di.uniba.it.tri.vectors.Vector;
 import di.uniba.it.tri.vectors.VectorFactory;
 import di.uniba.it.tri.vectors.VectorStoreUtils;
 import di.uniba.it.tri.vectors.VectorType;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -266,6 +267,8 @@ public class SpaceBuilderDict {
             for (String word : dict.keySet()) {
                 elementalSpace.put(word, VectorFactory.generateRandomVector(VectorType.REAL, dimension, seed, random));
             }
+            LOG.log(Level.INFO, "Save elemental vectors in dir: {0}", outputDir.getAbsolutePath());
+            VectorStoreUtils.saveSpace(new File(outputDir.getAbsolutePath() + "/vectors.elemental"), elementalSpace, VectorType.REAL, dimension, seed);
         } else {
             LOG.log(Level.INFO, "Loading random vectors from file {0}...", elemFile.getAbsolutePath());
             MemoryVectorReader vr = new MemoryVectorReader(elemFile);
@@ -276,57 +279,55 @@ public class SpaceBuilderDict {
         LOG.log(Level.INFO, "Building spaces: {0}", startingDir.getAbsolutePath());
         File[] listFiles = startingDir.listFiles();
         for (File file : listFiles) {
-            //init idf for each year
-            idfMap = new HashMap<>();
-            LOG.log(Level.INFO, "Space: {0}", file.getAbsolutePath());
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))));
-            DataOutputStream outputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputDir.getAbsolutePath() + "/" + file.getName() + ".vectors")));
-            String header = VectorStoreUtils.createHeader(VectorType.REAL, dimension, seed);
-            outputStream.writeUTF(header);
-            String[] split;
-            if (elementalSpace != null) {
-                while (reader.ready()) {
-                    split = reader.readLine().split("\t");
-                    String token = split[0];
-                    if (elementalSpace.containsKey(token)) {
-                        Vector v;
-                        if (self) {
-                            v = elementalSpace.get(token).copy();
-                        } else {
-                            v = VectorFactory.createZeroVector(VectorType.REAL, dimension);
-                        }
-                        int i = 1;
-                        while (i < split.length) {
-                            String word = split[i];
-                            Vector ev = elementalSpace.get(word);
-                            if (ev != null) {
-                                double f = dict.get(word).doubleValue() / (double) totalOcc; //downsampling
-                                double p = 1;
-                                if (f > t) { //if word frequency is greater than the threshold, compute the probability of consider the word 
-                                    p = Math.sqrt(t / f);
-                                }
-                                double w = Double.parseDouble(split[i + 1]) * p;
-                                if (idf) {
-                                    w = w * idf(word, dict.get(word).doubleValue());
-                                }
-                                v.superpose(ev, w, null);
+            if (!file.isDirectory()) {
+                //init idf for each year
+                idfMap = new Object2DoubleOpenHashMap();
+                LOG.log(Level.INFO, "Space: {0}", file.getAbsolutePath());
+                BufferedReader reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))));
+                DataOutputStream outputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputDir.getAbsolutePath() + "/" + file.getName() + ".vectors")));
+                String header = VectorStoreUtils.createHeader(VectorType.REAL, dimension, seed);
+                outputStream.writeUTF(header);
+                String[] split;
+                if (elementalSpace != null) {
+                    while (reader.ready()) {
+                        split = reader.readLine().split("\t");
+                        String token = split[0];
+                        if (elementalSpace.containsKey(token)) {
+                            Vector v;
+                            if (self) {
+                                v = elementalSpace.get(token).copy();
+                            } else {
+                                v = VectorFactory.createZeroVector(VectorType.REAL, dimension);
                             }
-                            i = i + 2;
-                        }
-                        if (!v.isZeroVector()) {
-                            v.normalize();
-                            outputStream.writeUTF(token);
-                            v.writeToStream(outputStream);
+                            int i = 1;
+                            while (i < split.length) {
+                                String word = split[i];
+                                Vector ev = elementalSpace.get(word);
+                                if (ev != null) {
+                                    double f = dict.get(word).doubleValue() / (double) totalOcc; //downsampling
+                                    double p = 1;
+                                    if (f > t) { //if word frequency is greater than the threshold, compute the probability of consider the word 
+                                        p = Math.sqrt(t / f);
+                                    }
+                                    double w = Double.parseDouble(split[i + 1]) * p;
+                                    if (idf) {
+                                        w = w * idf(word, dict.get(word).doubleValue());
+                                    }
+                                    v.superpose(ev, w, null);
+                                }
+                                i = i + 2;
+                            }
+                            if (!v.isZeroVector()) {
+                                v.normalize();
+                                outputStream.writeUTF(token);
+                                v.writeToStream(outputStream);
+                            }
                         }
                     }
+                    reader.close();
+                    outputStream.close();
                 }
-                reader.close();
-                outputStream.close();
             }
-        }
-        if (elemFile == null && elementalSpace != null) {
-            LOG.log(Level.INFO, "Save elemental vectors in dir: {0}", outputDir.getAbsolutePath());
-            VectorStoreUtils.saveSpace(new File(outputDir.getAbsolutePath() + "/vectors.elemental"), elementalSpace, VectorType.REAL, dimension, seed);
         }
     }
 
@@ -366,7 +367,7 @@ public class SpaceBuilderDict {
                 .addOption("s", true, "The number of seeds (optional, default is 10)")
                 .addOption("dict", true, "The dictionary file")
                 .addOption("elem", true, "Random vectors files (optional)")
-                .addOption("min-occ", true, "This will discard words that appear less than <int> times (optional, default is 5)")
+                .addOption("minocc", true, "This will discard words that appear less than <int> times (optional, default is 5)")
                 .addOption("idf", true, "Enable IDF (optinal, default is false)")
                 .addOption("self", true, "Inizialize using random vector (optinal, default is false)")
                 .addOption("t", true, "Threshold for downsampling frequent words (optinal, default is 0.001)");
@@ -390,7 +391,7 @@ public class SpaceBuilderDict {
                     builder.setSelf(Boolean.parseBoolean(cmd.getOptionValue("self", "false")));
                     builder.setT(Double.parseDouble(cmd.getOptionValue("t", "0.001")));
                     builder.setDictFile(new File(cmd.getOptionValue("dict")));
-                    builder.setMinOcc(Integer.parseInt(cmd.getOptionValue("min-occ", "5")));
+                    builder.setMinOcc(Integer.parseInt(cmd.getOptionValue("minocc", "5")));
                     if (cmd.hasOption("elem")) {
                         builder.setElemFile(new File(cmd.getOptionValue("elem")));
                     }
