@@ -34,14 +34,19 @@
  */
 package di.uniba.it.tri.script;
 
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,6 +65,8 @@ import org.apache.commons.csv.CSVPrinter;
  */
 public class BuildOccStatistics {
 
+    private static final Logger LOG = Logger.getLogger(BuildOccStatistics.class.getName());
+
     static Options options;
 
     static CommandLineParser cmdParser = new BasicParser();
@@ -68,7 +75,30 @@ public class BuildOccStatistics {
         options = new Options();
         options.addOption("i", true, "Input directory")
                 .addOption("o", true, "Output file")
-                .addOption("m", true, "Mode: occ, freq, logfreq (default=logfreq)");
+                .addOption("m", true, "Mode: occ, freq, logfreq (default=logfreq)")
+                .addOption("dict", true, "The dictionary file (optional)")
+                .addOption("minocc", true, "This will discard words that appear less than <int> times (optional, default is 5)");
+    }
+
+    private static Set<String> loadDict(File dictFile, int minocc) throws IOException {
+        Set<String> dict = new HashSet<>();
+        LOG.log(Level.INFO, "Load dict {0}", dictFile.getName());
+        BufferedReader reader = null;
+        if (dictFile.getName().endsWith(".gz")) {
+            reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(dictFile))));
+        } else {
+            reader = new BufferedReader(new FileReader(dictFile));
+        }
+        while (reader.ready()) {
+            String[] split = reader.readLine().split("\t");
+            int occ = Integer.parseInt(split[1]);
+            if (occ >= minocc) {
+                dict.add(split[0]);
+            }
+        }
+        reader.close();
+        LOG.log(Level.INFO, "Dict size {0}", dict.size());
+        return dict;
     }
 
     /**
@@ -82,6 +112,10 @@ public class BuildOccStatistics {
                 if (!(mode.equals("occ") || mode.equals("freq") || mode.equals("logfreq"))) {
                     throw new IllegalArgumentException("No valid mode");
                 }
+                Set<String> validSet = null;
+                if (cmd.hasOption("dict")) {
+                    validSet = loadDict(new File(cmd.getOptionValue("dict")), Integer.parseInt(cmd.getOptionValue("minocc", "5")));
+                }
                 File startDir = new File(cmd.getOptionValue("i"));
                 File[] files = startDir.listFiles();
                 Arrays.sort(files);
@@ -94,17 +128,19 @@ public class BuildOccStatistics {
                     String[] split;
                     while (reader.ready()) {
                         split = reader.readLine().split("\\s+");
-                        int c = 0;
-                        for (int i = 2; i < split.length; i = i + 2) {
-                            c += Integer.parseInt(split[i]);
+                        if (validSet == null || validSet.contains(split[0])) {
+                            int c = 0;
+                            for (int i = 2; i < split.length; i = i + 2) {
+                                c += Integer.parseInt(split[i]);
+                            }
+                            int[] vc = cmap.get(split[0]);
+                            if (vc == null) {
+                                vc = new int[files.length];
+                                cmap.put(split[0], vc);
+                            }
+                            vc[k] = c;
+                            totalCount[k] += c;
                         }
-                        int[] vc = cmap.get(split[0]);
-                        if (vc == null) {
-                            vc = new int[files.length];
-                            cmap.put(split[0], vc);
-                        }
-                        vc[k] = c;
-                        totalCount[k] += c;
                     }
                     reader.close();
                     k++;

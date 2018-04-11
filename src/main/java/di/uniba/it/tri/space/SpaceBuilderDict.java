@@ -366,7 +366,7 @@ public class SpaceBuilderDict {
                 .addOption("d", true, "The vector dimension (optional, default is 300)")
                 .addOption("s", true, "The number of seeds (optional, default is 10)")
                 .addOption("dict", true, "The dictionary file")
-                .addOption("elem", true, "Random vectors files (optional)")
+                .addOption("rv", true, "Random vectors files (optional)")
                 .addOption("minocc", true, "This will discard words that appear less than <int> times (optional, default is 5)")
                 .addOption("idf", true, "Enable IDF (optinal, default is false)")
                 .addOption("self", true, "Inizialize using random vector (optinal, default is false)")
@@ -392,8 +392,9 @@ public class SpaceBuilderDict {
                     builder.setT(Double.parseDouble(cmd.getOptionValue("t", "0.001")));
                     builder.setDictFile(new File(cmd.getOptionValue("dict")));
                     builder.setMinOcc(Integer.parseInt(cmd.getOptionValue("minocc", "5")));
-                    if (cmd.hasOption("elem")) {
-                        builder.setElemFile(new File(cmd.getOptionValue("elem")));
+                    if (cmd.hasOption("rv")) {
+                        builder.setElemFile(new File(cmd.getOptionValue("rv")));
+                        LOG.log(Level.INFO, "Set random vectors file {0}", builder.getElemFile().getAbsolutePath());
                     }
                     builder.build(new File(cmd.getOptionValue("o")));
                 } catch (IOException | NumberFormatException ex) {
