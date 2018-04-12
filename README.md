@@ -27,7 +27,8 @@ Setup
 1.  Install Java JDK 1.7, Maven, Git.
 2.  Clone the project using Git.
 3.  Compile the project using the command: *mvn package*.
-4.  Execute the bash script run.sh followed by the class name and arguments (see Command Line Guideline for more details).
+4.  Rename the file config.ex.properties in config.properties and set the parameters in the config file.
+5.  Execute the bash script run.sh followed by the class name and arguments (see Command Line Guideline for more details).
 
 Usage
 --------
