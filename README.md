@@ -61,22 +61,17 @@ Run the class *di.uniba.it.tri.occ.ati.occ.BuildOccurrenceATI*. This class build
 
 Run the class **di.uniba.it.tri.space.SpaceBuilderDict**. 
 
-usage: Build WordSpace using Temporal Random Indexing [-c <arg>] [-d <br>
-       <arg>] [-dict <arg>] [-idf <arg>] [-minocc <arg>] [-o <arg>] [-rv <br>
-       <arg>] [-s <arg>] [-self <arg>] [-t <arg>] <br>
+usage: Build WordSpace using Temporal Random Indexing [-c <arg>] [-d <arg>] [-dict <arg>] [-idf <arg>] [-minocc <arg>] [-o <arg>] [-rv <arg>] [-s <arg>] [-self <arg>] [-t <arg>] <br>
  -c <arg>        The directory containing the co-occurrences matrices <br>
  -d <arg>        The vector dimension (optional, default is 300) <br>
  -dict <arg>     The dictionary file <br>
  -idf <arg>      Enable IDF (optinal, default is false) <br>
- -minocc <arg>   This will discard words that appear less than <int> times <br>
-                 (optional, default is 5) <br>
+ -minocc <arg>   This will discard words that appear less than <int> times (optional, default is 5) <br>
  -o <arg>        Output directory where WordSpaces will be stored <br>
  -rv <arg>       Random vectors files (optional) <br>
  -s <arg>        The number of seeds (optional, default is 10) <br>
- -self <arg>     Inizialize using random vector (optinal, default is <br>
-                 false) <br>
- -t <arg>        Threshold for downsampling frequent words (optinal, <br>
-                 default is 0.001) <br>
+ -self <arg>     Inizialize using random vector (optinal, default is false) <br>
+ -t <arg>        Threshold for downsampling frequent words (optinal, default is 0.001) <br>
 
 Contacts
 -----------
