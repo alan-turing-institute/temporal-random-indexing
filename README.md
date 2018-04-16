@@ -43,7 +43,7 @@ In particular:
 The next steps are (see Command Line Guideline for more details):
 
 1. Build the dictionary
-2. Build co-occurrences matrices
+2. Build co-occurrence matrices
 3. Build WordSpaces using Temporal Random Indexing
 
 Command Line Guideline
@@ -53,16 +53,16 @@ Command Line Guideline
 
 Run the class *di.uniba.it.tri.occ.ati.dict.BuildDict*. This class builds the dictionary using the parameters in the file *config.properties*.
 
-**Build co-occurrences matrices**
+**Build co-occurrence matrices**
 
-Run the class *di.uniba.it.tri.occ.ati.occ.BuildOccurrenceATI*. This class builds the co-occurrences matrices using the parameters in the file *config.properties*.
+Run the class *di.uniba.it.tri.occ.ati.occ.BuildOccurrenceATI*. This class builds the co-occurrence matrices using the parameters in the file *config.properties*.
 
 **Build WordSpaces using Temporal Random Indexing**
 
 Run the class **di.uniba.it.tri.space.SpaceBuilderDict**. 
 
 usage: Build WordSpace using Temporal Random Indexing [-c <arg>] [-d <arg>] [-dict <arg>] [-idf <arg>] [-minocc <arg>] [-o <arg>] [-rv <arg>] [-s <arg>] [-self <arg>] [-t <arg>] <br>
- -c <arg>        The directory containing the co-occurrences matrices <br>
+ -c <arg>        The directory containing the co-occurrence matrices <br>
  -d <arg>        The vector dimension (optional, default is 300) <br>
  -dict <arg>     The dictionary file <br>
  -idf <arg>      Enable IDF (optinal, default is false) <br>
