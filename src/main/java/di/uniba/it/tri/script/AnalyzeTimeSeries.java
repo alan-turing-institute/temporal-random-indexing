@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  */
 public class AnalyzeTimeSeries {
 
-    private static List<TimeWord> loadTimeSerie(File inputFile) throws IOException {
+    private static List<TimeWord> loadTimeSeries(File inputFile) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(inputFile));
         reader.readLine();
         List<TimeWord> list = new ArrayList<>();
@@ -61,7 +61,7 @@ public class AnalyzeTimeSeries {
                     count.put(split[1], a);
                 }
                 reader.close();
-                List<TimeWord> loadTimeSerie = loadTimeSerie(new File(args[0]));
+                List<TimeWord> loadTimeSerie = loadTimeSeries(new File(args[0]));
                 Collections.sort(loadTimeSerie);
                 BufferedWriter writer = new BufferedWriter(new FileWriter(args[2]));
                 for (TimeWord tw : loadTimeSerie) {
