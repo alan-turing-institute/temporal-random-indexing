@@ -47,7 +47,7 @@ import di.uniba.it.tri.vectors.VectorFactory;
 import di.uniba.it.tri.vectors.VectorReader;
 import di.uniba.it.tri.vectors.VectorStoreUtils;
 import di.uniba.it.tri.vectors.VectorType;
-import static di.uniba.it.tri.vectors.VectorUtils.getNearestVector;
+import di.uniba.it.tri.vectors.VectorUtils;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -560,7 +560,7 @@ public class TemporalSpaceUtils {
             boolean changeFlag = false;
             // Map items to clusters.
             for (int i = 0; i < objectVectors.size(); i++) {
-                int j = getNearestVector(objectVectors.get(i).getVector(), clusters.getCentroids());
+                int j = VectorUtils.getNearestVector(objectVectors.get(i).getVector(), clusters.getCentroids());
                 if (j != clusters.getClusterMappings()[i]) {
                     changeFlag = true;
                     clusters.getClusterMappings()[i] = j;
