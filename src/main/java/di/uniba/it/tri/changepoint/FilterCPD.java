@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package di.uniba.it.tri.script;
+package di.uniba.it.tri.changepoint;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -38,7 +38,8 @@ public class FilterCPD {
                     int i = 1;
                     int c = 0;
                     while (i < split.length) {
-                        if (Double.parseDouble(split[i + 1]) <= th) {
+                        double pvalue = Double.parseDouble(split[i + 1]);
+                        if (pvalue > 0 && pvalue <= th) {
                             c++;
                             sb.append("\t").append(split[i]).append("\t").append(split[i + 1]);
                         }

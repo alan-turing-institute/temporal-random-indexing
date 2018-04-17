@@ -44,6 +44,7 @@ import di.uniba.it.tri.vectors.Vector;
 import di.uniba.it.tri.vectors.VectorFactory;
 import di.uniba.it.tri.vectors.VectorReader;
 import di.uniba.it.tri.vectors.VectorType;
+import di.uniba.it.tri.vectors.VectorUtils;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -187,12 +188,16 @@ public class Tri {
 
     //load a VectorReader
     public void load(String type, String name, String year) throws Exception {
+        load(type, name, year, true);
+    }
+
+    public void load(String type, String name, String year, boolean computeMeanVector) throws Exception {
         if (mainDir == null) {
             throw new Exception("Main dir not set");
         } else if (name == null) {
-            loadVectorReader(type, ELEMENTAL_NAME, TemporalSpaceUtils.getElementalFile(mainDir));
+            loadVectorReader(type, ELEMENTAL_NAME, TemporalSpaceUtils.getElementalFile(mainDir), computeMeanVector);
         } else {
-            loadVectorReader(type, name, TemporalSpaceUtils.getVectorFile(mainDir, year));
+            loadVectorReader(type, name, TemporalSpaceUtils.getVectorFile(mainDir, year), computeMeanVector);
         }
     }
 
@@ -230,6 +235,11 @@ public class Tri {
 
     //Utils to load a VectorReader
     private void loadVectorReader(String type, String name, File file) throws Exception {
+        loadVectorReader(type, name, file, true);
+    }
+
+    //Utils to load a VectorReader
+    private void loadVectorReader(String type, String name, File file, boolean computeMeanVector) throws Exception {
         VectorReader vr = null;
         if (type.equals("mem")) {
             vr = new MemoryVectorReader(file);
@@ -238,8 +248,12 @@ public class Tri {
                 stores.get(name).close();
             }
             stores.put(name, vr);
-            Vector meanVector = TemporalSpaceUtils.computeMeanVector(vr);
-            meanStore.put(name, meanVector);
+            if (computeMeanVector) {
+                Vector meanVector = TemporalSpaceUtils.computeMeanVector(vr);
+                meanStore.put(name, meanVector);
+            } else {
+                meanStore.put(name, VectorFactory.createZeroVector(VectorType.REAL, vr.getDimension()));
+            }
         } else if (type.equals("file")) {
             vr = new FileVectorReader(file);
             vr.init();
@@ -247,11 +261,23 @@ public class Tri {
                 stores.get(name).close();
             }
             stores.put(name, vr);
-            Vector meanVector = TemporalSpaceUtils.computeMeanVector(vr);
-            meanStore.put(name, meanVector);
+            if (computeMeanVector) {
+                Vector meanVector = TemporalSpaceUtils.computeMeanVector(vr);
+                meanStore.put(name, meanVector);
+            } else {
+                meanStore.put(name, VectorFactory.createZeroVector(VectorType.REAL, vr.getDimension()));
+            }
         } else {
             throw new Exception("not valid vector reader type");
         }
+    }
+
+    public boolean containsStore(String storename) {
+        return stores.containsKey(storename);
+    }
+
+    public boolean containsVector(String vectroname) {
+        return vectors.containsKey(vectroname);
     }
 
     public void clearStores() {

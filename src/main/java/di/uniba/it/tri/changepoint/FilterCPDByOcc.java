@@ -3,18 +3,21 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package di.uniba.it.tri.script;
+package di.uniba.it.tri.changepoint;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 
 /**
  * This class removes CPDs associated with words that are below a specified
@@ -23,9 +26,16 @@ import java.util.logging.Logger;
  * @author pierpaolo
  */
 public class FilterCPDByOcc {
-    
+
+    private static final Logger LOG = Logger.getLogger(FilterCPDByOcc.class.getName());
+
     private static Set<String> loadWordset(File file, int th) throws IOException {
-        BufferedReader in = new BufferedReader(new FileReader(file));
+        BufferedReader in;
+        if (file.getName().endsWith(".gz")) {
+            in = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))));
+        } else {
+            in = new BufferedReader(new FileReader(file));
+        }
         Set<String> set = new ObjectOpenHashSet<>();
         while (in.ready()) {
             String[] split = in.readLine().split("\t");
@@ -34,6 +44,7 @@ public class FilterCPDByOcc {
             }
         }
         in.close();
+        LOG.log(Level.INFO, "Valid set size: {0}", set.size());
         return set;
     }
 
@@ -50,29 +61,19 @@ public class FilterCPDByOcc {
                 BufferedReader reader = new BufferedReader(new FileReader(args[1]));
                 BufferedWriter writer = new BufferedWriter(new FileWriter(args[2]));
                 while (reader.ready()) {
-                    String[] split = reader.readLine().split("\t");
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(split[0]);
-                    int i = 1;
-                    int c = 0;
-                    while (i < split.length) {
-                        if (wordset.contains(split[i])) {
-                            c++;
-                            sb.append("\t").append(split[i]).append("\t").append(split[i + 1]);
-                        }
-                        i = i + 2;
-                    }
-                    if (c != 0) {
-                        writer.write(sb.toString());
+                    String line = reader.readLine();
+                    String[] split = line.split("\t");
+                    if (wordset.contains(split[0])) {
+                        writer.write(line);
                         writer.newLine();
                     }
                 }
                 reader.close();
                 writer.close();
             } catch (IOException ioex) {
-                Logger.getLogger(FilterCPDByOcc.class.getName()).log(Level.SEVERE, null, ioex);
+                LOG.log(Level.SEVERE, null, ioex);
             }
         }
     }
-    
+
 }

@@ -5,6 +5,7 @@
  */
 package di.uniba.it.tri.script;
 
+import di.uniba.it.tri.changepoint.TimeWord;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;

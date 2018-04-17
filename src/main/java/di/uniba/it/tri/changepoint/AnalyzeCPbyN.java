@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package di.uniba.it.tri.script;
+package di.uniba.it.tri.changepoint;
 
 import di.uniba.it.tri.api.Tri;
 import di.uniba.it.tri.vectors.ObjectVector;
