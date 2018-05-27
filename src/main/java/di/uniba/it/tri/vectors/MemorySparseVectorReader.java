@@ -142,6 +142,11 @@ public class MemorySparseVectorReader implements VectorReader {
         return this.dimension;
     }
 
+    @Override
+    public int getSize() throws IOException {
+        return this.memory.size();
+    }
+
     /**
      *
      */

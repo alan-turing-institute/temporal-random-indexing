@@ -58,6 +58,8 @@ public class FileVectorReader implements VectorReader {
 
     private int dimension;
 
+    private int numVectors = -1;
+
     /**
      *
      * @param inputFile
@@ -87,6 +89,21 @@ public class FileVectorReader implements VectorReader {
 
     }
 
+    public int getSize() throws IOException {
+        if (numVectors == -1) {
+            numVectors = 0;
+            DataInputStream inputStream = new DataInputStream(new BufferedInputStream(new FileInputStream(inputFile)));
+            inputStream.readUTF();
+            while (inputStream.available() > 0) {
+                inputStream.readUTF();
+                inputStream.skipBytes(VectorFactory.getByteSize(VectorType.REAL, dimension));
+                numVectors++;
+            }
+            inputStream.close();
+        }
+        return numVectors;
+    }
+
     /**
      *
      * @param key
@@ -114,8 +131,7 @@ public class FileVectorReader implements VectorReader {
 
     /**
      *
-     * @return
-     * @throws IOException
+     * @return @throws IOException
      */
     @Override
     public Iterator<String> getKeys() throws IOException {
@@ -133,8 +149,7 @@ public class FileVectorReader implements VectorReader {
 
     /**
      *
-     * @return
-     * @throws IOException
+     * @return @throws IOException
      */
     @Override
     public Iterator<ObjectVector> getAllVectors() throws IOException {

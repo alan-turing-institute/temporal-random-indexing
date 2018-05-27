@@ -1,3 +1,6 @@
 /target/
 /config.properties
 
+/src/main/java/di/uniba/it/tri/changepoint/gs/OEDapi.java
+/src/main/java/di/uniba/it/tri/changepoint/gs/Sense.java
+/src/main/java/di/uniba/it/tri/changepoint/gs/

@@ -68,16 +68,17 @@ public class ThreadDictProcessing extends Thread {
                         while (reader.ready()) {
                             try {
                                 String text = reader.readLine();
-                                if (text.length() < MAX_TEXT_LENGTH) {
-                                    List<String> tokens = tokenizer.getTokens(text);
-                                    filter.filter(tokens);
-                                    for (String token : tokens) {
-                                        Integer value = map.get(token);
-                                        if (value == null) {
-                                            map.put(token, 1);
-                                        } else {
-                                            map.put(token, value + 1);
-                                        }
+                                if (text.length() > MAX_TEXT_LENGTH) {
+                                    text = text.substring(0, MAX_TEXT_LENGTH);
+                                }
+                                List<String> tokens = tokenizer.getTokens(text);
+                                filter.filter(tokens);
+                                for (String token : tokens) {
+                                    Integer value = map.get(token);
+                                    if (value == null) {
+                                        map.put(token, 1);
+                                    } else {
+                                        map.put(token, value + 1);
                                     }
                                 }
                             } catch (Exception ex) {

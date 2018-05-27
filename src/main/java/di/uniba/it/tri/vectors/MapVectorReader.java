@@ -116,6 +116,11 @@ public class MapVectorReader implements VectorReader {
         return this.dimension;
     }
 
+    @Override
+    public int getSize() throws IOException {
+        return this.memory.size();
+    }
+
     /**
      *
      */

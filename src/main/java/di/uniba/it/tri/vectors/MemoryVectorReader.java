@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -91,8 +90,11 @@ public class MemoryVectorReader implements VectorReader {
     public Map<String, Vector> getMemory() {
         return memory;
     }
-    
-    
+
+    @Override
+    public int getSize() throws IOException {
+        return this.memory.size();
+    }
 
     /**
      *
@@ -106,8 +108,7 @@ public class MemoryVectorReader implements VectorReader {
 
     /**
      *
-     * @return
-     * @throws IOException
+     * @return @throws IOException
      */
     public Iterator<String> getKeys() throws IOException {
         return memory.keySet().iterator();
@@ -123,8 +124,7 @@ public class MemoryVectorReader implements VectorReader {
 
     /**
      *
-     * @return
-     * @throws IOException
+     * @return @throws IOException
      */
     @Override
     public Iterator<ObjectVector> getAllVectors() throws IOException {

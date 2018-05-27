@@ -84,4 +84,6 @@ public interface VectorReader {
      */
     public int getDimension();
     
+    public int getSize() throws IOException;
+    
 }
