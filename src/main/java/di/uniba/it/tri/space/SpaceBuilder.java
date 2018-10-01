@@ -399,7 +399,9 @@ public class SpaceBuilder {
                 queue.poll();
             }
         }
-        queue.poll();
+        if (queue.size() > maxSize) {
+            queue.poll();
+        }
         cmap.clear();
         cmap = null;
         Map<String, Integer> dict = new HashMap<>(queue.size());
