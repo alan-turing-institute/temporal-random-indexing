@@ -331,8 +331,8 @@ public class BuildOccurrence {
                 for (int i = 0; i < tokens.size(); i++) {
                     if (vocabulary.contains(tokens.get(i))) {
                         int start = Math.max(0, i - winsize);
-                        int end = Math.min(tokens.size(), i + winsize);
-                        for (int j = start; j < end; j++) {
+                        int end = Math.min(tokens.size() - 1, i + winsize);
+                        for (int j = start; j <= end; j++) {
                             if (i != j && vocabulary.contains(tokens.get(j))) {
                                 Integer tid = dictCount.get(tokens.get(i));
                                 if (tid == null) {
@@ -389,8 +389,8 @@ public class BuildOccurrence {
                     for (int i = 0; i < tokens.size(); i++) {
                         if (vocabulary.contains(tokens.get(i))) {
                             int start = Math.max(0, i - winsize);
-                            int end = Math.min(tokens.size(), i + winsize);
-                            for (int j = start; j < end; j++) {
+                            int end = Math.min(tokens.size() - 1, i + winsize);
+                            for (int j = start; j <= end; j++) {
                                 if (i != j && vocabulary.contains(tokens.get(j))) {
                                     Integer tid = dictCount.get(tokens.get(i));
                                     if (tid == null) {
