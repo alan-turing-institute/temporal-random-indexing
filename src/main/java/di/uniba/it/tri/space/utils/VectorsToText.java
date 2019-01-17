@@ -71,7 +71,8 @@ public class VectorsToText {
                             vr.close();
                             out.close();
                             LOG.log(Level.INFO, "Upload block: {0}", outFile.getName());
-                            block.uploadFromFile(outFile.getAbsolutePath());
+                            CloudBlockBlob newBlock = mainContainer.getBlockBlobReference(block.getName() + ".txt.gz");
+                            newBlock.uploadFromFile(outFile.getAbsolutePath());
                             LOG.info("Clean...");
                             inputFile.delete();
                             outFile.delete();
