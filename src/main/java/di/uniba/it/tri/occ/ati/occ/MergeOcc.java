@@ -81,6 +81,7 @@ public class MergeOcc {
                                     k++;
                                 }
                             }
+                            reader.close();
                         } catch (Exception ex) {
                             LOG.log(Level.SEVERE, null, ex);
                         }
