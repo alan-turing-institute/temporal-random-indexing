@@ -21,6 +21,15 @@ Details about the algorithm are published in the following paper:
 
 Please, cite the paper if you adopt our tool.
 
+The tool was also used and further developed in the following publication:
+
+Basile, P., and McGillivray, B. (2018). Exploiting the Web for Semantic Change Detection. Discovery Science 2018 (Vol. 5, pp. 194–208). Springer International Publishing. https://doi.org/10.1007/978-3-030-01771-2_13
+
+and was the starting point for  this project https://github.com/adtsakal/Semantic_Change described in the following publication:
+
+Tsakalidis, A., Bazzi, M., Cucuringu, M., Basile, P., Mcgillivray, B., Alan, T., & Kingdom, U. (2019). Mining the UK Web Archive for Semantic Change Detection. In Proceedings of International Conference Recent Advances in Natural Language Processing. Retrieved from https://ora.ox.ac.uk/objects/uuid:19258068-98ab-444f-a8f0-e3389be618f2
+
+
 Setup
 --------
 
